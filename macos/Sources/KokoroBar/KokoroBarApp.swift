@@ -24,13 +24,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        ActiveAppTracker.shared.start()
         hotKeyManager.registerCommandShiftR {
-            NotificationCenter.default.post(name: .kokoroReadRequested, object: nil)
+            let targetPID = ActiveAppTracker.shared.selectedTextTargetPID()
+            let userInfo: [String: Any]? = targetPID.map { ["targetPID": $0] }
+            NotificationCenter.default.post(
+                name: .kokoroReadRequested,
+                object: nil,
+                userInfo: userInfo
+            )
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         hotKeyManager.unregister()
+        ActiveAppTracker.shared.stop()
     }
 }
 

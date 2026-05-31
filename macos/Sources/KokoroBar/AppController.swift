@@ -24,8 +24,10 @@ final class AppController: ObservableObject {
             forName: .kokoroReadRequested,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
-            Task { await self?.readSelectedText(explicit: false) }
+        ) { [weak self] notification in
+            let targetPID = notification.userInfo?["targetPID"] as? pid_t
+            let selectedTextPID = targetPID == ProcessInfo.processInfo.processIdentifier ? nil : targetPID
+            Task { await self?.readSelectedText(explicit: false, targetPID: selectedTextPID) }
         }
 
         if settings.autoStartBackend {
@@ -51,9 +53,9 @@ final class AppController: ObservableObject {
         await speak(text)
     }
 
-    func readSelectedText(explicit: Bool) async {
+    func readSelectedText(explicit: Bool, targetPID: pid_t? = nil) async {
         do {
-            if let selectedText = try AccessibilityTextReader.selectedText(), !selectedText.trimmed.isEmpty {
+            if let selectedText = try AccessibilityTextReader.selectedText(targetPID: targetPID), !selectedText.trimmed.isEmpty {
                 await speak(selectedText)
                 return
             }

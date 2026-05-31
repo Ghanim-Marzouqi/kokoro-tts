@@ -20,16 +20,18 @@ enum AccessibilityTextReader {
         }
     }
 
-    static func selectedText() throws -> String? {
+    static func selectedText(targetPID: pid_t? = nil) throws -> String? {
         guard isTrusted(prompt: false) else {
             throw ReaderError.permissionMissing
         }
 
-        if let selectedText = directAccessibilitySelectedText(), !selectedText.trimmed.isEmpty {
+        if let selectedText = directAccessibilitySelectedText(targetPID: targetPID),
+           isUsableSelectedText(selectedText) {
             return selectedText
         }
 
-        if let copiedText = copySelectedTextPreservingClipboard(), !copiedText.trimmed.isEmpty {
+        if let copiedText = copySelectedTextPreservingClipboard(targetPID: targetPID),
+           isUsableSelectedText(copiedText) {
             return copiedText
         }
 
@@ -43,11 +45,11 @@ enum AccessibilityTextReader {
         NSWorkspace.shared.open(url)
     }
 
-    private static func directAccessibilitySelectedText() -> String? {
-        let systemWideElement = AXUIElementCreateSystemWide()
+    private static func directAccessibilitySelectedText(targetPID: pid_t?) -> String? {
+        let sourceElement = targetPID.map { AXUIElementCreateApplication($0) } ?? AXUIElementCreateSystemWide()
         var focusedValue: CFTypeRef?
         let focusedResult = AXUIElementCopyAttributeValue(
-            systemWideElement,
+            sourceElement,
             kAXFocusedUIElementAttribute as CFString,
             &focusedValue
         )
@@ -70,7 +72,7 @@ enum AccessibilityTextReader {
         return selectedValue as? String
     }
 
-    private static func copySelectedTextPreservingClipboard() -> String? {
+    private static func copySelectedTextPreservingClipboard(targetPID: pid_t?) -> String? {
         let pasteboard = NSPasteboard.general
         let originalChangeCount = pasteboard.changeCount
         let originalItems = pasteboard.pasteboardItems?.map { item in
@@ -81,6 +83,13 @@ enum AccessibilityTextReader {
                 }
             }
             return copy
+        }
+
+        if let targetPID,
+           let targetApp = NSRunningApplication(processIdentifier: targetPID),
+           targetApp.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            targetApp.activate(options: [])
+            usleep(120_000)
         }
 
         pasteboard.clearContents()
@@ -103,6 +112,11 @@ enum AccessibilityTextReader {
         }
 
         return copiedText
+    }
+
+    private static func isUsableSelectedText(_ text: String) -> Bool {
+        let trimmed = text.trimmed
+        return !trimmed.isEmpty && trimmed != "KokoroBar" && trimmed != "Kokoro TTS"
     }
 
     private static func postCommandC() {

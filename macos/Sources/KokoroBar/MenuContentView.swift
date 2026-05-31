@@ -15,7 +15,8 @@ struct MenuContentView: View {
         }
 
         Button("Read Selected Text") {
-            Task { await controller.readSelectedText(explicit: true) }
+            let targetPID = ActiveAppTracker.shared.selectedTextTargetPID()
+            Task { await controller.readSelectedText(explicit: true, targetPID: targetPID) }
         }
 
         Button("Stop Speaking") {
