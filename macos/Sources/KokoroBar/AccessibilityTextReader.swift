@@ -21,7 +21,7 @@ enum AccessibilityTextReader {
     }
 
     static func selectedText() throws -> String? {
-        guard isTrusted(prompt: true) else {
+        guard isTrusted(prompt: false) else {
             throw ReaderError.permissionMissing
         }
 

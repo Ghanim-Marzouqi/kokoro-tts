@@ -30,5 +30,9 @@ fi
 
 chmod +x "$contents_dir/Resources/backend/scripts/"*.sh
 
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --deep --sign - "$app_dir"
+fi
+
 echo "Built $app_dir"
 echo "You can move it to /Applications for personal use."
