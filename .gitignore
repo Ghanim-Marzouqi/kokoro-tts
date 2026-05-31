@@ -1,0 +1,12 @@
+.DS_Store
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# SwiftPM
+.build/
+.swiftpm/
+dist/
