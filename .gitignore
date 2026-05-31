@@ -10,3 +10,6 @@ __pycache__/
 .build/
 .swiftpm/
 dist/
+
+# Editors
+.vscode/
